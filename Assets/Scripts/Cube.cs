@@ -8,35 +8,38 @@ public class Cube : MonoBehaviour
     private int _splitChanceReduce = 2;
 
     private CubeSpawner _spawner;
+    private Exploder _exploder;    
 
     private void Awake()
     {
         _spawner = FindObjectOfType<CubeSpawner>();
+        _exploder = FindObjectOfType<Exploder>();
     }
 
     private void OnMouseDown()
-    {
-        if (_spawner == null)
-        {
-            Debug.LogError("CubeSpawner is not assigned!");
-            return;
+    {     
+        if (CanSplit())
+        {            
+            _spawner.SpawnCubes(transform);            
         }
+        else
+        { 
+            _exploder.Explode(gameObject);
+        }        
+    }    
 
-        Debug.Log($"Current split chance: {_currentSplitChance}%");
-        
+    private bool CanSplit()
+    {
         int randomValue = Random.Range(_minSplitChance, _maxSplitChance);
 
-        Debug.Log($"Random value: {randomValue}");
-
         if (randomValue <= _currentSplitChance)
-        {            
-            _spawner.SpawnCubes(transform);
+        {
             _currentSplitChance /= _splitChanceReduce;
+            return true;
         }
         else
         {
-            Debug.Log("Cube destroyed!");
-            Destroy(gameObject);
+            return false;
         }
     }
 }

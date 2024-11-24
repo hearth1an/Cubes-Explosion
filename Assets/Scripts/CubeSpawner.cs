@@ -5,10 +5,14 @@ public class CubeSpawner : MonoBehaviour
 {
     [SerializeField] private GameObject _cubePrefab;
     [SerializeField] private int _minCubes = 2;
-    [SerializeField] private int _maxCubes = 6;
+    [SerializeField] private int _maxCubes = 6;    
 
-    [SerializeField] private float _explosionForce = 10f;
-    [SerializeField] private float _explosionRadius = 2f;
+    private Exploder _exploder;
+
+    private void Awake()
+    {
+        _exploder = FindAnyObjectByType<Exploder>();
+    }
 
     public void SpawnCubes(Transform sourceCube)
     {
@@ -20,20 +24,10 @@ public class CubeSpawner : MonoBehaviour
             newCubes.Add(CreateCube(sourceCube));
         }
 
-        ApplyExplosionForce(newCubes, sourceCube.position);
-                
+        _exploder.ExplodeCreatedCubes(newCubes, sourceCube.position);
+
         Destroy(sourceCube.gameObject);
-    }
-
-    private void ApplyExplosionForce(List<GameObject> cubes, Vector3 explosionCenter)
-    {
-        float upwardsModifier = 0.5f;
-
-        foreach (var cube in cubes)
-        {
-            cube.GetComponent<Rigidbody>().AddExplosionForce(_explosionForce, explosionCenter, _explosionRadius, upwardsModifier, ForceMode.Impulse);            
-        }
-    }
+    }    
 
     private GameObject CreateCube(Transform sourceCube)
     {
