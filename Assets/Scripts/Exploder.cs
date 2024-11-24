@@ -10,28 +10,37 @@ public class Exploder : MonoBehaviour
 
     public void Explode(GameObject cube)
     {
+        int forceMultiplier = 3;
         float cubeSize = cube.transform.localScale.magnitude;
-        float explosionForce = Mathf.Max(_baseExplosionForce / cubeSize, 5f);
-        float explosionRadius = Mathf.Max(_baseExplosionRadius / cubeSize, 10f);
+        float force = _baseExplosionForce / cubeSize * forceMultiplier;
+        float radius = _baseExplosionRadius / cubeSize * forceMultiplier;
+        Vector3 center = cube.transform.position;
 
-        ApplyExplosionForce(cube.transform.position, explosionForce, explosionRadius);
+        Collider[] colliders = Physics.OverlapSphere(center, radius);
+
+        foreach (Collider collider in colliders)
+        {   
+            Rigidbody rigidBody = collider.GetComponent<Rigidbody>();
+
+            if (rigidBody != null)
+            {
+                AddExplosion(rigidBody.gameObject, force, center, radius);               
+            }
+        }
 
         Destroy(cube);
     }
 
     public void ExplodeCreatedCubes(List<GameObject> cubes, Vector3 explosionCenter)
     {
-        ApplyExplosionForce(explosionCenter, _baseExplosionForce, _baseExplosionRadius);
+        foreach (GameObject cube in cubes)
+        {
+            AddExplosion(cube, _baseExplosionForce, explosionCenter, _baseExplosionRadius);
+        }        
     }
 
-    private void ApplyExplosionForce(List<GameObject> cubes, Vector3 center, float force, float radius)
+    private void AddExplosion(GameObject gameObject, float force, Vector3 center, float radius)
     {
-        Collider[] colliders = Physics.OverlapSphere(center, radius);
-
-
-        foreach (Collider collider in colliders)
-        {
-            collider.GetComponent<Rigidbody>().AddExplosionForce(force, center, radius, _upwardsModifier, ForceMode.Impulse);
-        }
+        gameObject.GetComponent<Rigidbody>().AddExplosionForce(force, center, radius, _upwardsModifier, ForceMode.Impulse);
     }
 }
