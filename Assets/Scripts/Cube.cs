@@ -2,13 +2,13 @@ using UnityEngine;
 
 public class Cube : MonoBehaviour
 {
-    private static int _currentSplitChance = 100;
+    private int _currentSplitChance = 10;
     private int _maxSplitChance = 100;
     private int _minSplitChance = 0;
     private int _splitChanceReduce = 2;
 
     private CubeSpawner _spawner;
-    private Exploder _exploder;    
+    private Exploder _exploder;
 
     private void Awake()
     {
@@ -17,16 +17,16 @@ public class Cube : MonoBehaviour
     }
 
     private void OnMouseDown()
-    {     
+    {
         if (CanSplit())
-        {            
-            _spawner.SpawnCubes(transform);            
+        {
+            _spawner.SpawnCubes(this);
         }
         else
-        { 
-            _exploder.Explode(gameObject);
-        }        
-    }    
+        {
+            _exploder.Explode(this);
+        }
+    }
 
     private bool CanSplit()
     {
@@ -35,11 +35,52 @@ public class Cube : MonoBehaviour
         if (randomValue <= _currentSplitChance)
         {
             _currentSplitChance /= _splitChanceReduce;
+
+            Debug.Log(_currentSplitChance);
             return true;
         }
-        else
-        {
-            return false;
-        }
+
+        return false;
+    }
+
+    public Renderer GetRenderer()
+    {
+        return gameObject.GetComponent<Renderer>();
+    }
+
+    public Transform GetTransform()
+    {
+       return gameObject.GetComponent<Transform>();
+    }
+
+    public void ChangeScale(Vector3 scale)
+    {
+        gameObject.transform.localScale = scale;
+    }
+
+    public void ChangeColor()
+    {
+        gameObject.GetComponent<Renderer>().material.color = new Color (Random.value, Random.value, Random.value);
+    }
+
+    public Vector3 GetScale()
+    {
+        Vector3 scale = gameObject.transform.localScale;
+
+        return scale;
+    }
+
+    public Vector3 GetPosition()
+    {
+        Vector3 position = gameObject.transform.position;
+
+        return position;
+    }
+
+    public void AddExplosion(float force, Vector3 center, float radius)
+    {
+        float upwardsModifier = 0.1f;
+
+        gameObject.GetComponent<Rigidbody>().AddExplosionForce(force, center, radius, upwardsModifier, ForceMode.Impulse);
     }
 }

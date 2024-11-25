@@ -3,9 +3,9 @@ using UnityEngine;
 
 public class CubeSpawner : MonoBehaviour
 {
-    [SerializeField] private GameObject _cubePrefab;
+    [SerializeField] private Cube _cubePrefab;
     [SerializeField] private int _minCubes = 2;
-    [SerializeField] private int _maxCubes = 6;    
+    [SerializeField] private int _maxCubes = 6;
 
     private Exploder _exploder;
 
@@ -14,31 +14,31 @@ public class CubeSpawner : MonoBehaviour
         _exploder = FindAnyObjectByType<Exploder>();
     }
 
-    public void SpawnCubes(Transform sourceCube)
+    public void SpawnCubes(Cube sourceCube)
     {
         int childCount = Random.Range(_minCubes, _maxCubes + 1);
-        List<GameObject> newCubes = new List<GameObject>();
+        List<Cube> newCubes = new List<Cube>();
 
         for (int i = 0; i < childCount; i++)
-        {    
+        {
             newCubes.Add(CreateCube(sourceCube));
         }
 
-        _exploder.ExplodeCreatedCubes(newCubes, sourceCube.position);
+        _exploder.ExplodeCreatedCubes(newCubes, sourceCube.GetPosition());
 
         Destroy(sourceCube.gameObject);
-    }    
+    }
 
-    private GameObject CreateCube(Transform sourceCube)
+    private Cube CreateCube(Cube sourceCube)
     {
         int scaleReduceValue = 2;
+        Vector3 newScale = sourceCube.GetScale() / scaleReduceValue;
 
-        GameObject newCube = Instantiate(_cubePrefab, sourceCube.position, Random.rotation);
+        Cube newCube = Instantiate(_cubePrefab, sourceCube.GetPosition(), Random.rotation);         
 
-        newCube.transform.localScale = sourceCube.localScale / scaleReduceValue;
+        newCube.ChangeScale(newScale);
 
-        Renderer renderer = newCube.GetComponent<Renderer>();
-        renderer.material.color = new Color(Random.value, Random.value, Random.value);
+        newCube.ChangeColor();
 
         newCube.GetComponent<Rigidbody>().useGravity = true;
 
