@@ -6,14 +6,7 @@ public class CubeSpawner : MonoBehaviour
     [SerializeField] private Cube _cubePrefab;
     [SerializeField] private int _minCubes = 2;
     [SerializeField] private int _maxCubes = 6;
-
-    private Exploder _exploder;
-
-    private void Awake()
-    {
-        _exploder = FindAnyObjectByType<Exploder>();
-    }
-
+        
     public void SpawnCubes(Cube sourceCube)
     {
         int childCount = Random.Range(_minCubes, _maxCubes + 1);
@@ -24,7 +17,10 @@ public class CubeSpawner : MonoBehaviour
             newCubes.Add(CreateCube(sourceCube));
         }
 
-        _exploder.ExplodeCreatedCubes(newCubes, sourceCube.GetPosition());
+        foreach (Cube cube in newCubes)
+        {
+            cube.AddExplosion(sourceCube.baseExplosionForce, sourceCube.GetPosition(), sourceCube.baseExplosionRadius);
+        }        
 
         Destroy(sourceCube.gameObject);
     }
@@ -34,12 +30,11 @@ public class CubeSpawner : MonoBehaviour
         int scaleReduceValue = 2;
         Vector3 newScale = sourceCube.GetScale() / scaleReduceValue;
 
-        Cube newCube = Instantiate(_cubePrefab, sourceCube.GetPosition(), Random.rotation);         
+        Cube newCube = Instantiate(_cubePrefab, sourceCube.GetPosition(), Random.rotation);       
 
         newCube.ChangeScale(newScale);
-
         newCube.ChangeColor();
-
+        newCube.UpdateSplitChance(sourceCube.GetCurrentSplitChance());
         newCube.GetComponent<Rigidbody>().useGravity = true;
 
         return newCube;

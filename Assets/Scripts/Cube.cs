@@ -2,18 +2,25 @@ using UnityEngine;
 
 public class Cube : MonoBehaviour
 {
-    private int _currentSplitChance = 10;
+    private float _baseExplosionForce = 10f;
+    private float _baseExplosionRadius = 40f;
+
+    private int _currentSplitChance = 100;
     private int _maxSplitChance = 100;
     private int _minSplitChance = 0;
     private int _splitChanceReduce = 2;
+    private bool _isSplitted = false;
 
     private CubeSpawner _spawner;
-    private Exploder _exploder;
+
+    public float baseExplosionForce { get; private set; }
+    public float baseExplosionRadius { get; private set; }
 
     private void Awake()
     {
+        baseExplosionForce = _baseExplosionForce;
+        baseExplosionRadius = _baseExplosionRadius;
         _spawner = FindObjectOfType<CubeSpawner>();
-        _exploder = FindObjectOfType<Exploder>();
     }
 
     private void OnMouseDown()
@@ -21,42 +28,53 @@ public class Cube : MonoBehaviour
         if (CanSplit())
         {
             _spawner.SpawnCubes(this);
+            _isSplitted = true;
         }
         else
         {
-            _exploder.Explode(this);
+            Destroy(gameObject);
         }
     }
 
-    private bool CanSplit()
+    private void OnDestroy()
     {
-        int randomValue = Random.Range(_minSplitChance, _maxSplitChance);
+        int forceMultiplier = 3;
+        float cubeSize = gameObject.transform.localScale.magnitude;
+        float force = _baseExplosionForce / cubeSize * forceMultiplier;
+        float radius = _baseExplosionRadius / cubeSize * forceMultiplier;
+        Vector3 center = gameObject.transform.position;
 
-        if (randomValue <= _currentSplitChance)
+        Collider[] colliders = Physics.OverlapSphere(center, radius);
+
+        if (_isSplitted == false)
         {
-            _currentSplitChance /= _splitChanceReduce;
+            foreach (Collider collider in colliders)
+            {
+                Rigidbody rigidBody = collider.GetComponent<Rigidbody>();
 
-            Debug.Log(_currentSplitChance);
-            return true;
-        }
-
-        return false;
+                if (rigidBody != null)
+                {
+                    collider.gameObject.GetComponent<Cube>().AddExplosion(force, center, radius);
+                }
+            }
+        }        
+    }
+    public void UpdateSplitChance(int chance)
+    {
+        _currentSplitChance = chance;
     }
 
-    public Renderer GetRenderer()
+    public int GetCurrentSplitChance()
     {
-        return gameObject.GetComponent<Renderer>();
-    }
+        int chance = _currentSplitChance;
 
-    public Transform GetTransform()
-    {
-       return gameObject.GetComponent<Transform>();
+        return chance;
     }
 
     public void ChangeScale(Vector3 scale)
     {
         gameObject.transform.localScale = scale;
-    }
+    }    
 
     public void ChangeColor()
     {
@@ -82,5 +100,19 @@ public class Cube : MonoBehaviour
         float upwardsModifier = 0.1f;
 
         gameObject.GetComponent<Rigidbody>().AddExplosionForce(force, center, radius, upwardsModifier, ForceMode.Impulse);
+    }
+
+    private bool CanSplit()
+    {
+        int randomValue = Random.Range(_minSplitChance, _maxSplitChance);
+
+        if (randomValue <= _currentSplitChance)
+        {
+            _currentSplitChance /= _splitChanceReduce;
+
+            return true;
+        }
+
+        return false;
     }
 }
