@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 
 public class Cube : MonoBehaviour
 {
@@ -9,56 +10,62 @@ public class Cube : MonoBehaviour
     private int _maxSplitChance = 100;
     private int _minSplitChance = 0;
     private int _splitChanceReduce = 2;
-    private bool _isSplitted = false;
-
-    private CubeSpawner _spawner;
+    private bool _isSplitted = false;    
 
     public float baseExplosionForce { get; private set; }
     public float baseExplosionRadius { get; private set; }
 
+    public event Action<Cube> SplitAllowed;
+
     private void Awake()
     {
         baseExplosionForce = _baseExplosionForce;
-        baseExplosionRadius = _baseExplosionRadius;
-        _spawner = FindObjectOfType<CubeSpawner>();
+        baseExplosionRadius = _baseExplosionRadius;        
     }
 
     private void OnMouseDown()
     {
+        if (_isSplitted)
+            return;
+
         if (CanSplit())
         {
-            _spawner.SpawnCubes(this);
+            SplitAllowed?.Invoke(this);            
             _isSplitted = true;
+            TriggerExplosion();
+
+            Destroy(gameObject);
         }
         else
         {
             Destroy(gameObject);
         }
-    }
+    }    
 
-    private void OnDestroy()
+    private void TriggerExplosion()
     {
         int forceMultiplier = 3;
-        float cubeSize = gameObject.transform.localScale.magnitude;
+        float cubeSize = transform.localScale.magnitude;
         float force = _baseExplosionForce / cubeSize * forceMultiplier;
         float radius = _baseExplosionRadius / cubeSize * forceMultiplier;
-        Vector3 center = gameObject.transform.position;
+        Vector3 center = transform.position;
 
         Collider[] colliders = Physics.OverlapSphere(center, radius);
 
-        if (_isSplitted == false)
+        foreach (Collider collider in colliders)
         {
-            foreach (Collider collider in colliders)
-            {
-                Rigidbody rigidBody = collider.GetComponent<Rigidbody>();
+            Rigidbody rigidBody = collider.GetComponent<Rigidbody>();
 
-                if (rigidBody != null)
+            if (rigidBody != null)
+            {
+                if (collider.TryGetComponent<Cube>(out Cube cube))
                 {
-                    collider.gameObject.GetComponent<Cube>().AddExplosion(force, center, radius);
+                    cube.AddExplosion(force, center, radius);
                 }
             }
-        }        
+        }
     }
+
     public void UpdateSplitChance(int chance)
     {
         _currentSplitChance = chance;
@@ -78,7 +85,7 @@ public class Cube : MonoBehaviour
 
     public void ChangeColor()
     {
-        gameObject.GetComponent<Renderer>().material.color = new Color (Random.value, Random.value, Random.value);
+        gameObject.GetComponent<Renderer>().material.color = new Color (UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value);
     }
 
     public Vector3 GetScale()
@@ -104,7 +111,7 @@ public class Cube : MonoBehaviour
 
     private bool CanSplit()
     {
-        int randomValue = Random.Range(_minSplitChance, _maxSplitChance);
+        int randomValue = UnityEngine.Random.Range(_minSplitChance, _maxSplitChance);
 
         if (randomValue <= _currentSplitChance)
         {
