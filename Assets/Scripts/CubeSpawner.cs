@@ -4,36 +4,47 @@ using UnityEngine;
 public class CubeSpawner : MonoBehaviour
 {
     [SerializeField] private Cube _cubePrefab;
+    [SerializeField] private List<Cube> _cubes;
     [SerializeField] private int _minCubes = 2;
     [SerializeField] private int _maxCubes = 6;
 
-    private void Awake()
-    {
-        foreach (Cube cube in FindObjectsOfType<Cube>())
+    private List<Cube> _activeCubes = new();
+
+    private void Start()
+    {        
+        foreach (var cube in _cubes)
         {
-            SubscribeToCube(cube);
-        }        
+            RegisterCube(cube);
+        }
     }
 
-    private void SubscribeToCube(Cube cube)
+    private void RegisterCube(Cube cube)
     {
-        cube.SplitAllowed += SpawnCubes;
+        cube.SplitRequested += SpawnCubes;
+        _activeCubes.Add(cube);
+    }
+
+    private void UnregisterCube(Cube cube)
+    {
+        cube.SplitRequested -= SpawnCubes;
+        _activeCubes.Remove(cube);
     }
 
     public void SpawnCubes(Cube sourceCube)
     {
         int childCount = UnityEngine.Random.Range(_minCubes, _maxCubes + 1);
-        List<Cube> newCubes = new List<Cube>();
-
+        
         for (int i = 0; i < childCount; i++)
         {
-            newCubes.Add(CreateCube(sourceCube));
+            Cube newCube = CreateCube(sourceCube);
+            _activeCubes.Add(newCube);            
         }
 
-        foreach (Cube cube in newCubes)
-        {
-            cube.AddExplosion(sourceCube.baseExplosionForce, sourceCube.GetPosition(), sourceCube.baseExplosionRadius);
+        foreach (Cube cube in _activeCubes)
+        {            
+            cube.AddExplosion(sourceCube.BaseExplosionForce, sourceCube.GetPosition(), sourceCube.BaseExplosionRadius);
         }
+
     }
 
     private Cube CreateCube(Cube sourceCube)
@@ -45,7 +56,7 @@ public class CubeSpawner : MonoBehaviour
 
         newCube.ChangeScale(newScale);
         newCube.ChangeColor();
-        newCube.UpdateSplitChance(sourceCube.GetCurrentSplitChance());
+        newCube.UpdateSplitChance(sourceCube.CurrentSplitChance);
         newCube.GetComponent<Rigidbody>().useGravity = true;
 
         return newCube;

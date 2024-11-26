@@ -1,81 +1,43 @@
 using UnityEngine;
 using System;
 
+[RequireComponent(typeof(Rigidbody), typeof(Renderer))]
 public class Cube : MonoBehaviour
 {
-    private float _baseExplosionForce = 10f;
-    private float _baseExplosionRadius = 40f;
-
     private int _currentSplitChance = 100;
     private int _maxSplitChance = 100;
     private int _minSplitChance = 0;
     private int _splitChanceReduce = 2;
-    private bool _isSplitted = false;    
+    private bool _isSplitted = false;
 
-    public float baseExplosionForce { get; private set; }
-    public float baseExplosionRadius { get; private set; }
+    public event Action<Cube> SplitRequested;
 
-    public event Action<Cube> SplitAllowed;
+    public float BaseExplosionForce { get; private set; } = 10f;
+    public float BaseExplosionRadius { get; private set; } = 40f;
 
-    private void Awake()
-    {
-        baseExplosionForce = _baseExplosionForce;
-        baseExplosionRadius = _baseExplosionRadius;        
-    }
-
+    public int CurrentSplitChance => _currentSplitChance;
+   
     private void OnMouseDown()
     {
         if (_isSplitted)
             return;
 
-        if (CanSplit())
+        if (TryReduceSplitChance())
         {
-            SplitAllowed?.Invoke(this);            
+            SplitRequested?.Invoke(this);            
             _isSplitted = true;
-            TriggerExplosion();
-
-            Destroy(gameObject);
+            TriggerExplosion();            
         }
-        else
+
+        if (gameObject != null)
         {
             Destroy(gameObject);
         }
     }    
 
-    private void TriggerExplosion()
-    {
-        int forceMultiplier = 3;
-        float cubeSize = transform.localScale.magnitude;
-        float force = _baseExplosionForce / cubeSize * forceMultiplier;
-        float radius = _baseExplosionRadius / cubeSize * forceMultiplier;
-        Vector3 center = transform.position;
-
-        Collider[] colliders = Physics.OverlapSphere(center, radius);
-
-        foreach (Collider collider in colliders)
-        {
-            Rigidbody rigidBody = collider.GetComponent<Rigidbody>();
-
-            if (rigidBody != null)
-            {
-                if (collider.TryGetComponent<Cube>(out Cube cube))
-                {
-                    cube.AddExplosion(force, center, radius);
-                }
-            }
-        }
-    }
-
     public void UpdateSplitChance(int chance)
     {
         _currentSplitChance = chance;
-    }
-
-    public int GetCurrentSplitChance()
-    {
-        int chance = _currentSplitChance;
-
-        return chance;
     }
 
     public void ChangeScale(Vector3 scale)
@@ -85,7 +47,7 @@ public class Cube : MonoBehaviour
 
     public void ChangeColor()
     {
-        gameObject.GetComponent<Renderer>().material.color = new Color (UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value);
+        GetComponent<Renderer>().material.color = new Color (UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value);
     }
 
     public Vector3 GetScale()
@@ -109,7 +71,7 @@ public class Cube : MonoBehaviour
         gameObject.GetComponent<Rigidbody>().AddExplosionForce(force, center, radius, upwardsModifier, ForceMode.Impulse);
     }
 
-    private bool CanSplit()
+    private bool TryReduceSplitChance()
     {
         int randomValue = UnityEngine.Random.Range(_minSplitChance, _maxSplitChance);
 
@@ -121,5 +83,29 @@ public class Cube : MonoBehaviour
         }
 
         return false;
+    }
+
+    private void TriggerExplosion()
+    {
+        int forceMultiplier = 3;
+        float cubeSize = transform.localScale.magnitude;
+        float force = BaseExplosionForce / cubeSize * forceMultiplier;
+        float radius = BaseExplosionRadius / cubeSize * forceMultiplier;
+        Vector3 center = transform.position;
+
+        Collider[] colliders = Physics.OverlapSphere(center, radius);
+
+        foreach (Collider collider in colliders)
+        {
+            Rigidbody rigidBody = collider.GetComponent<Rigidbody>();
+
+            if (rigidBody != null)
+            {
+                if (collider.TryGetComponent<Cube>(out Cube cube))
+                {
+                    cube.AddExplosion(force, center, radius);
+                }
+            }
+        }
     }
 }
