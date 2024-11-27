@@ -5,6 +5,7 @@ public class CubeSpawner : MonoBehaviour
 {
     [SerializeField] private Cube _cubePrefab;
     [SerializeField] private List<Cube> _cubes;
+    [SerializeField] private Exploder _exploder;
     [SerializeField] private int _minCubes = 2;
     [SerializeField] private int _maxCubes = 6;
 
@@ -31,13 +32,7 @@ public class CubeSpawner : MonoBehaviour
         cube.ChangeScale(scale);
         cube.ChangeColor();
         cube.UpdateSplitChance(sourceCube.CurrentSplitChance);
-
-        Rigidbody rigidbody = cube.GetComponent<Rigidbody>();
-
-        if (rigidbody != null)
-        {
-            rigidbody.useGravity = true;
-        }
+        cube.Rigidbody.useGravity = true;
     }
 
     public void SpawnCubes(Cube sourceCube)
@@ -51,7 +46,7 @@ public class CubeSpawner : MonoBehaviour
             newCubes.Add(newCube);
         }
 
-        Exploder.TriggerExplosion(sourceCube.GetPosition(), sourceCube.BaseExplosionForce, sourceCube.BaseExplosionRadius, newCubes);
+        _exploder.TriggerExplosion(sourceCube.GetPosition(), sourceCube.BaseExplosionForce, sourceCube.BaseExplosionRadius, newCubes);
 
         UnregisterCube(sourceCube);
         Destroy(sourceCube.gameObject);
