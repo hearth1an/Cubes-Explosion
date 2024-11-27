@@ -25,15 +25,7 @@ public class CubeSpawner : MonoBehaviour
         {
             UnregisterCube(cube);
         }
-    }
-
-    public void Init(Cube cube, Vector3 scale, Cube sourceCube)
-    {
-        cube.ChangeScale(scale);
-        cube.ChangeColor();
-        cube.UpdateSplitChance(sourceCube.CurrentSplitChance);
-        cube.Rigidbody.useGravity = true;
-    }
+    }    
 
     public void SpawnCubes(Cube sourceCube)
     {
@@ -46,7 +38,7 @@ public class CubeSpawner : MonoBehaviour
             newCubes.Add(newCube);
         }
 
-        _exploder.TriggerExplosion(sourceCube.GetPosition(), sourceCube.BaseExplosionForce, sourceCube.BaseExplosionRadius, newCubes);
+        _exploder.TriggerExplosion(sourceCube.Position, sourceCube.BaseExplosionForce, sourceCube.BaseExplosionRadius, newCubes);
 
         UnregisterCube(sourceCube);
         Destroy(sourceCube.gameObject);
@@ -69,9 +61,9 @@ public class CubeSpawner : MonoBehaviour
         int scaleReduceValue = 2;
         Vector3 newScale = sourceCube.transform.localScale / scaleReduceValue;
 
-        Cube newCube = Instantiate(_cubePrefab, sourceCube.GetPosition(), UnityEngine.Random.rotation);
+        Cube newCube = Instantiate(_cubePrefab, sourceCube.Position, UnityEngine.Random.rotation);
 
-        Init(newCube, newScale, sourceCube);
+        newCube.Init(newScale, sourceCube);       
 
         RegisterCube(newCube);
         return newCube;
