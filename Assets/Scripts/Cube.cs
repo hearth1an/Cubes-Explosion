@@ -3,8 +3,7 @@ using System;
 
 [RequireComponent(typeof(Rigidbody), typeof(Renderer))]
 public class Cube : MonoBehaviour
-{
-    private int _currentSplitChance = 100;
+{    
     private int _maxSplitChance = 100;
     private int _minSplitChance = 0;
     private int _splitChanceReduce = 2;
@@ -14,9 +13,8 @@ public class Cube : MonoBehaviour
 
     public float BaseExplosionForce { get; private set; } = 10f;
     public float BaseExplosionRadius { get; private set; } = 40f;
+    public int CurrentSplitChance { get; private set; } = 100;
 
-    public int CurrentSplitChance => _currentSplitChance;
-   
     private void OnMouseDown()
     {
         if (_isSplitted)
@@ -24,42 +22,35 @@ public class Cube : MonoBehaviour
 
         if (TryReduceSplitChance())
         {
-            SplitRequested?.Invoke(this);            
+            SplitRequested?.Invoke(this);
             _isSplitted = true;
+        }
+        else
+        {
             TriggerExplosion();            
         }
 
-        if (gameObject != null)
-        {
-            Destroy(gameObject);
-        }
-    }    
+        Destroy(gameObject);
+    }
 
     public void UpdateSplitChance(int chance)
     {
-        _currentSplitChance = chance;
+        CurrentSplitChance = chance;
     }
 
     public void ChangeScale(Vector3 scale)
     {
-        gameObject.transform.localScale = scale;
-    }    
+        transform.localScale = scale;
+    }
 
     public void ChangeColor()
     {
-        GetComponent<Renderer>().material.color = new Color (UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value);
-    }
-
-    public Vector3 GetScale()
-    {
-        Vector3 scale = gameObject.transform.localScale;
-
-        return scale;
-    }
+        GetComponent<Renderer>().material.color = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value);
+    }    
 
     public Vector3 GetPosition()
     {
-        Vector3 position = gameObject.transform.position;
+        Vector3 position = transform.position;
 
         return position;
     }
@@ -68,16 +59,16 @@ public class Cube : MonoBehaviour
     {
         float upwardsModifier = 0.1f;
 
-        gameObject.GetComponent<Rigidbody>().AddExplosionForce(force, center, radius, upwardsModifier, ForceMode.Impulse);
+        GetComponent<Rigidbody>().AddExplosionForce(force, center, radius, upwardsModifier, ForceMode.Impulse);
     }
 
     private bool TryReduceSplitChance()
     {
         int randomValue = UnityEngine.Random.Range(_minSplitChance, _maxSplitChance);
 
-        if (randomValue <= _currentSplitChance)
+        if (randomValue <= CurrentSplitChance)
         {
-            _currentSplitChance /= _splitChanceReduce;
+            CurrentSplitChance /= _splitChanceReduce;
 
             return true;
         }

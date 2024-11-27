@@ -11,11 +11,53 @@ public class CubeSpawner : MonoBehaviour
     private List<Cube> _activeCubes = new();
 
     private void Start()
-    {        
-        foreach (var cube in _cubes)
+    {
+        foreach (Cube cube in _cubes)
         {
             RegisterCube(cube);
         }
+    }
+
+    private void OnDestroy()
+    {
+        foreach (Cube cube in _activeCubes)
+        {
+            UnregisterCube(cube);
+        }
+    }
+
+    public void Init(Cube cube, Vector3 scale, Cube sourceCube)
+    {
+        cube.ChangeScale(scale);
+        cube.ChangeColor();
+        cube.UpdateSplitChance(sourceCube.CurrentSplitChance);
+
+        Rigidbody rigidbody = cube.GetComponent<Rigidbody>();
+
+        if (rigidbody != null)
+        {
+            rigidbody.useGravity = true;
+        }
+    }
+
+    public void SpawnCubes(Cube sourceCube)
+    {
+        int childCount = UnityEngine.Random.Range(_minCubes, _maxCubes + 1);
+        List<Cube> newCubes = new();
+
+        for (int i = 0; i < childCount; i++)
+        {
+            Cube newCube = CreateCube(sourceCube);
+            newCubes.Add(newCube);
+        }
+
+        foreach (Cube cube in newCubes)
+        {
+            cube.AddExplosion(sourceCube.BaseExplosionForce, sourceCube.GetPosition(), sourceCube.BaseExplosionRadius);
+        }
+
+        UnregisterCube(sourceCube);
+        Destroy(sourceCube.gameObject);
     }
 
     private void RegisterCube(Cube cube)
@@ -30,35 +72,16 @@ public class CubeSpawner : MonoBehaviour
         _activeCubes.Remove(cube);
     }
 
-    public void SpawnCubes(Cube sourceCube)
-    {
-        int childCount = UnityEngine.Random.Range(_minCubes, _maxCubes + 1);
-        
-        for (int i = 0; i < childCount; i++)
-        {
-            Cube newCube = CreateCube(sourceCube);
-            _activeCubes.Add(newCube);            
-        }
-
-        foreach (Cube cube in _activeCubes)
-        {            
-            cube.AddExplosion(sourceCube.BaseExplosionForce, sourceCube.GetPosition(), sourceCube.BaseExplosionRadius);
-        }
-
-    }
-
     private Cube CreateCube(Cube sourceCube)
     {
         int scaleReduceValue = 2;
-        Vector3 newScale = sourceCube.GetScale() / scaleReduceValue;
+        Vector3 newScale = sourceCube.transform.localScale / scaleReduceValue;
 
-        Cube newCube = Instantiate(_cubePrefab, sourceCube.GetPosition(), UnityEngine.Random.rotation);       
+        Cube newCube = Instantiate(_cubePrefab, sourceCube.GetPosition(), UnityEngine.Random.rotation);
 
-        newCube.ChangeScale(newScale);
-        newCube.ChangeColor();
-        newCube.UpdateSplitChance(sourceCube.CurrentSplitChance);
-        newCube.GetComponent<Rigidbody>().useGravity = true;
+        Init(newCube, newScale, sourceCube);
 
+        RegisterCube(newCube);
         return newCube;
-    }
+    }    
 }
