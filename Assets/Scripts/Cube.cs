@@ -1,21 +1,29 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 
 [RequireComponent(typeof(Rigidbody), typeof(Renderer))]
 public class Cube : MonoBehaviour
 {
-    private int _currentSplitChance = 100;
     private int _maxSplitChance = 100;
     private int _minSplitChance = 0;
     private int _splitChanceReduce = 2;
     private bool _isSplitted = false;
 
+    private Rigidbody _rigidbody;
+    private Renderer _renderer;
+
     public event Action<Cube> SplitRequested;
 
     public float BaseExplosionForce { get; private set; } = 10f;
     public float BaseExplosionRadius { get; private set; } = 40f;
+    public int CurrentSplitChance { get; private set; } = 100;
 
-    public int CurrentSplitChance => _currentSplitChance;
+    private void Awake()
+    {
+        _rigidbody = GetComponent<Rigidbody>();
+        _renderer = GetComponent<Renderer>();
+    }
 
     private void OnMouseDown()
     {
@@ -29,14 +37,18 @@ public class Cube : MonoBehaviour
         }
         else
         {
-            TriggerExplosion();
-            Destroy(gameObject);
+            var cubesInRadius = FindCubesInRadius(BaseExplosionRadius);
+
+            Exploder.TriggerExplosion(transform.position, BaseExplosionForce, BaseExplosionRadius, cubesInRadius);
+           
         }
+
+        Destroy(gameObject);
     }
 
     public void UpdateSplitChance(int chance)
     {
-        _currentSplitChance = chance;
+        CurrentSplitChance = chance;
     }
 
     public void ChangeScale(Vector3 scale)
@@ -46,21 +58,12 @@ public class Cube : MonoBehaviour
 
     public void ChangeColor()
     {
-        GetComponent<Renderer>().material.color = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value);
-    }
-
-    public Vector3 GetScale()
-    {
-        Vector3 scale = transform.localScale;
-
-        return scale;
+        _renderer.material.color = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value);
     }
 
     public Vector3 GetPosition()
     {
-        Vector3 position = transform.position;
-
-        return position;
+        return transform.position;
     }
 
     public void AddExplosion(float force, Vector3 center, float radius)
@@ -74,9 +77,9 @@ public class Cube : MonoBehaviour
     {
         int randomValue = UnityEngine.Random.Range(_minSplitChance, _maxSplitChance);
 
-        if (randomValue <= _currentSplitChance)
+        if (randomValue <= CurrentSplitChance)
         {
-            _currentSplitChance /= _splitChanceReduce;
+            CurrentSplitChance /= _splitChanceReduce;
 
             return true;
         }
@@ -84,27 +87,19 @@ public class Cube : MonoBehaviour
         return false;
     }
 
-    private void TriggerExplosion()
+    private List<Cube> FindCubesInRadius(float radius)
     {
-        int forceMultiplier = 3;
-        float cubeSize = transform.localScale.magnitude;
-        float force = BaseExplosionForce / cubeSize * forceMultiplier;
-        float radius = BaseExplosionRadius / cubeSize * forceMultiplier;
-        Vector3 center = transform.position;
-
-        Collider[] colliders = Physics.OverlapSphere(center, radius);
+        Collider[] colliders = Physics.OverlapSphere(transform.position, radius);
+        List<Cube> cubes = new();
 
         foreach (Collider collider in colliders)
         {
-            Rigidbody rigidBody = collider.GetComponent<Rigidbody>();
-
-            if (rigidBody != null)
+            if (collider.TryGetComponent<Cube>(out Cube cube) && cube != this)
             {
-                if (collider.TryGetComponent<Cube>(out Cube cube))
-                {
-                    cube.AddExplosion(force, center, radius);
-                }
+                cubes.Add(cube);
             }
         }
+
+        return cubes;
     }
 }
