@@ -41,7 +41,6 @@ public class CubeSpawner : MonoBehaviour
         _exploder.TriggerExplosion(sourceCube.Position, sourceCube.BaseExplosionForce, sourceCube.BaseExplosionRadius, newCubes);
 
         UnregisterCube(sourceCube);
-        Destroy(sourceCube.gameObject);
     }
 
     private void RegisterCube(Cube cube)

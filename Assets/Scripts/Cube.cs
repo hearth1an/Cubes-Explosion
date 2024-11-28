@@ -10,7 +10,6 @@ public class Cube : MonoBehaviour
     private int _maxSplitChance = 100;
     private int _minSplitChance = 0;
     private int _splitChanceReduce = 2;
-    private bool _isSplitted = false;
     
     private Renderer _renderer;
 
@@ -32,9 +31,6 @@ public class Cube : MonoBehaviour
 
     private void OnMouseDown()
     {
-        if (_isSplitted)
-            return;
-
         if (CanSplit())
         {
             SplitRequested?.Invoke(this);            
@@ -43,28 +39,9 @@ public class Cube : MonoBehaviour
         {
             List<Cube> cubes = _exploder.FindCubesInRadius(transform.position, BaseExplosionRadius);
             _exploder.TriggerExplosion(transform.position, BaseExplosionForce, BaseExplosionRadius, cubes);
-            
-            _exploder.TriggerExplosion(transform.position, BaseExplosionForce, BaseExplosionRadius, _exploder.FindCubesInRadius(transform.position, BaseExplosionRadius));
         }
 
         Destroy(gameObject);
-    }
-
-    public void UpdateSplitChance(int chance)
-    {    
-        chance /= _splitChanceReduce;
-
-        CurrentSplitChance = chance;
-    }
-
-    public void ChangeScale(Vector3 scale)
-    {
-        transform.localScale = scale;
-    }
-
-    public void ChangeColor()
-    {
-        _renderer.material.color = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value);
     }
 
     public void Init(Vector3 scale, Cube sourceCube)
@@ -79,22 +56,36 @@ public class Cube : MonoBehaviour
     {
         float upwardsModifier = 0.1f;
 
-        float sizeFactor = 1f / transform.localScale.magnitude; 
-        float adjustedForce = baseForce * sizeFactor;
-        float adjustedRadius = baseRadius * sizeFactor;
+        int forceMultiplier = 3;
+
+        float sizeFactor = 1f / transform.localScale.magnitude;
+        float adjustedForce = baseForce * sizeFactor * forceMultiplier;
+        float adjustedRadius = baseRadius * sizeFactor * forceMultiplier;
 
         Rigidbody.AddExplosionForce(adjustedForce, center, adjustedRadius, upwardsModifier, ForceMode.Impulse);
     }
 
+    private void UpdateSplitChance(int chance)
+    {    
+        chance /= _splitChanceReduce;
+
+        CurrentSplitChance = chance;
+    }
+
+    private void ChangeScale(Vector3 scale)
+    {
+        transform.localScale = scale;
+    }
+
+    private void ChangeColor()
+    {
+        _renderer.material.color = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value);
+    }    
+
     private bool CanSplit()
     {
         int randomValue = UnityEngine.Random.Range(_minSplitChance, _maxSplitChance);
-
-        if (randomValue <= CurrentSplitChance)
-        {   
-            return true;
-        }
-
-        return false;
+        
+        return randomValue <= CurrentSplitChance;
     }    
 }
